@@ -36,4 +36,16 @@ describe('App', () => {
     expect(screen.getByText(/组合投注/)).toBeInTheDocument()
     expect(screen.getByText('同时命中 · 合计')).toBeInTheDocument()
   })
+
+  it('刷新后已启用的规则保持(持久化)', async () => {
+    const first = render(<App />)
+    await userEvent.click(screen.getByRole('button', { name: '规则' }))
+    await userEvent.click(screen.getByRole('button', { name: '已停用' })) // 启用内置规则
+    expect(screen.getByRole('button', { name: '已启用' })).toBeInTheDocument()
+    first.unmount()
+    // 模拟刷新:重新挂载,localStorage 不清
+    render(<App />)
+    await userEvent.click(screen.getByRole('button', { name: '规则' }))
+    expect(screen.getByRole('button', { name: '已启用' })).toBeInTheDocument()
+  })
 })
