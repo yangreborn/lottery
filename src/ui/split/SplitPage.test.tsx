@@ -10,9 +10,9 @@ describe('SplitPage', () => {
     expect(screen.getByText(/省税 ¥2,080/)).toBeInTheDocument()
   })
 
-  it('数字彩有分开拆/混合打包模式切换', () => {
+  it('数字彩有标准拆分/票数最少模式切换', () => {
     render(<SplitPage rules={[]} />)
-    expect(screen.getByRole('button', { name: '分开拆' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '混合打包' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '标准拆分' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '票数最少' })).toBeInTheDocument()
   })
 })

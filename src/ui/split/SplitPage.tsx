@@ -61,8 +61,8 @@ export function SplitPage({ rules }: { rules: Rule[] }) {
           <div>
             <div className="text-sm text-gray-400 mb-1.5">多玩法怎么放到票上</div>
             <div className="flex gap-2">
-              <button className={modeChip(mode === 'separate')} onClick={() => setMode('separate')}>分开拆</button>
-              <button className={modeChip(mode === 'mixed')} onClick={() => setMode('mixed')}>混合打包</button>
+              <button className={modeChip(mode === 'separate')} onClick={() => setMode('separate')}>标准拆分</button>
+              <button className={modeChip(mode === 'mixed')} onClick={() => setMode('mixed')}>票数最少</button>
             </div>
           </div>
         </>
