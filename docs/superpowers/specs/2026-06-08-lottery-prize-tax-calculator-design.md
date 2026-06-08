@@ -16,10 +16,16 @@
 - 快乐8
 - 体彩 排列3
 
+### 包含
+- 全档位中奖速查(奖金 / 税后 / 缴税 / 实名)
+- 手动活动规则编辑器,且**计算结果展示每条规则加了多少奖金、由哪条规则触发**(见 §5、§6)
+- **公告收件箱**:手动粘贴官方活动公告;应用只保存不自动转规则;顶部提示"有 N 条公告未应用为规则"(见 §6.1)
+
 ### 明确不做(YAGNI)
 - 双色球 / 大乐透 / 七星彩等浮动奖大彩种
 - 竞彩(按赔率、串关,结构完全不同)
-- 自动爬取 / 公告自动解析(改为纯手动规则编辑器)
+- **自动爬取官网**(本版改为手动"粘贴公告";保留 `feed.json` 数据契约作为将来接入抓取器的扩展点,见 §6.1)
+- 公告文字**自动解析成规则**(只提示、不解析;规则仍手动录入)
 - 后端服务、账号、云同步
 
 ## 2. 核心用法(交互模型)
@@ -84,17 +90,38 @@
 ```
 base      = 该档位单注固定奖金
 afterMult = base × 倍数
-afterRule = applyActiveRules(afterMult, ctx)   // 套用启用的活动规则(见 §6)
-amount    = afterRule                            // 单票该档位中奖总额(税/实名判定基数)
+{ amount, applied } = applyActiveRules(afterMult, ctx)  // 套用启用规则,并记录每条贡献(见 §6)
+                                                         // amount = 单票该档位中奖总额(税/实名判定基数)
 tax       = amount > 10000 ? amount × 0.20 : 0
 netAmount = amount - tax
 needTax   = amount > 10000
 needRealname = amount > 3000
 ```
 
+每个档位结果 `TierResult` 携带完整计算明细(`base / afterMult / applied / amount`),供结果页展示"加了多少、哪条规则触发":
+```ts
+type AppliedRule = { ruleId: string; ruleName: string; delta: number }  // delta = 该规则带来的奖金增量(元)
+type TierResult = {
+  tierLabel: string          // 如 "中7个" / "组选三"
+  base: number               // 单注基础奖金
+  multiplier: number
+  afterMult: number          // base × 倍数
+  applied: AppliedRule[]     // 命中的活动规则及各自增量(空数组=无规则参与)
+  amount: number | null      // 最终单票总额(浮动奖为 null)
+  tax: number
+  netAmount: number | null
+  needTax: boolean
+  needRealname: boolean
+  floating: boolean
+}
+```
+
 `ctx` 上下文含:彩种、玩法、档位、单票投注金额(= 玩法基础 2 元 × 倍数,用于"满额加奖"类条件判定)。
 
-浮动奖档位:`amount = null`,跳过税/实名计算,标记 `floating: true`。
+浮动奖档位:`amount = null`,跳过规则增量/税/实名计算,标记 `floating: true`。
+
+**结果页展示**:每档默认显示最终奖金 + 缴税/实名标签;当 `applied` 非空时,卡片下方追加一行(或可点开)明细,例如:
+`基础 1040 ×10 = 10400 → 「满18元加奖·翻倍」+10400 → 20800`,并对每条规则标出 `+金额` 与规则名。
 
 引擎为**纯函数**,不依赖 DOM/存储,输入相同输出相同,便于 TDD。
 
@@ -128,6 +155,38 @@ type Rule = {
 - 规则持久化到 `localStorage`;提供"新增/编辑/删除/启停/排序"。
 - 内置一个空规则集,默认不影响计算。
 
+`applyActiveRules` 不仅返回最终金额,还返回每条命中规则的**增量明细**,供结果页展示(见 §5 的 `AppliedRule`):
+```
+running = afterMult
+for rule in 启用且适用且条件命中的规则(按列表顺序):
+    next  = applyEffect(running, rule.effect)   // multiply/addPercent/addFixed/cap
+    delta = next - running
+    记录 { ruleId, ruleName, delta }
+    running = next
+return { amount: running, applied: [...] }
+```
+`cap`(封顶)可能产生负 delta(被削减),如实记录,展示为 `−金额`。
+
+### 6.1 公告收件箱与"未应用"提示
+
+来源为**手动粘贴**(本版不抓取)。数据结构:
+```ts
+type Announcement = {
+  id: string
+  title: string
+  content: string            // 粘贴的公告原文
+  source?: string            // 可选:链接或出处
+  addedAt: string
+  status: 'pending' | 'applied' | 'ignored'   // 未应用 / 已转为规则 / 已忽略
+  linkedRuleIds?: string[]   // 由该公告生成/关联的规则
+}
+```
+- 用户在"公告收件箱"页**粘贴**官方活动公告并保存,状态默认 `pending`。
+- 应用**只保存、不自动解析成规则**;规则仍由用户手动录入(录入后可把公告标为 `applied` 并关联 `linkedRuleIds`)。
+- 顶部全局提示:当存在 `status==='pending'` 的公告时,显示红点/横幅 **"有 N 条公告未应用为规则"**;点击进入收件箱。这即"获取信息后不自动更新、网页提示有新规则未更新"。
+- 持久化到 `localStorage`。
+- **扩展点(本版不实现)**:约定 `public/feed.json` 数据契约 = `Announcement[]`(去 status 字段)。将来若加本地抓取脚本/云函数,只需写入 `feed.json`,应用启动时合并为 `pending` 公告,UI 与提示逻辑无需改动。
+
 ## 7. 技术方案与架构
 
 - **栈**:Vite + React + TypeScript + Tailwind CSS;构建为纯静态文件。
@@ -143,27 +202,31 @@ src/
     types.ts        // GameId / Play / Tier / Rule 等类型
   engine/
     calc.ts         // computeTiers(input, rules) -> TierResult[]  (纯函数)
-    rules.ts        // applyActiveRules(amount, ctx, rules) -> number (纯函数)
+    rules.ts        // applyActiveRules(amount, ctx, rules) -> { amount, applied } (纯函数)
   store/
-    rulesStore.ts   // localStorage 读写 + 校验
+    rulesStore.ts          // 规则 localStorage 读写 + 校验
+    announcementsStore.ts  // 公告收件箱 localStorage 读写 + 校验
   ui/
     App.tsx
     GameSelector.tsx
     PlaySelector.tsx
     MultiplierStepper.tsx
-    ResultList.tsx / ResultCard.tsx
+    ResultList.tsx / ResultCard.tsx   // ResultCard 展示规则增量明细(§5)
+    PendingBanner.tsx                 // 顶部"有 N 条公告未应用"提示(§6.1)
     rules/RulesPage.tsx / RuleForm.tsx
+    inbox/InboxPage.tsx / AnnouncementForm.tsx   // 粘贴/管理公告
 ```
 
 ### 数据流
-输入(game/play/multiplier)+ 启用规则 → `useMemo(computeTiers)` → `ResultList`。规则编辑页改动 → 写 store → 主页重算。
+输入(game/play/multiplier)+ 启用规则 → `useMemo(computeTiers)` → `ResultList`(每档可展开规则增量明细)。规则编辑页改动 → 写 rulesStore → 主页重算。公告收件箱改动 → 写 announcementsStore → `PendingBanner` 重新计数。
 
 ## 8. 错误处理与边界
 
 - 倍数:整数,限定 1–99(超出夹紧),空输入按 1。
-- 浮动奖档位:显示"浮动 · 开奖后定",不判税/实名。
+- 浮动奖档位:显示"浮动 · 开奖后定",不判税/实名,也不展示规则增量。
 - 规则数值非法(负数、百分比越界):表单即时校验,阻止保存。
-- `localStorage` 不可用(隐私模式):降级为内存态,提示规则不会被保存。
+- 公告:标题或正文为空不允许保存;`pending` 计数为 0 时隐藏顶部提示。
+- `localStorage` 不可用(隐私模式):降级为内存态,提示规则/公告不会被保存。
 - 金额展示:千分位,人民币 `¥`;小数仅在必要时(如选一 4.5 元)。
 
 ## 9. 假设(需用户/实现期确认)
@@ -179,8 +242,10 @@ src/
   - 3D 单选 ×10 = 10400 → 缴税+实名;
   - 快乐8 选八中八 = 50000 → 税后 40000;
   - 规则叠加顺序(multiply 后 addPercent 后 cap);
+  - 规则增量明细 `applied`:各 delta 正确、`cap` 产生负 delta、无规则时为空数组;
   - 浮动奖跳过判定。
-- 关键 UI 行为:切换输入实时刷新、规则启停影响结果。
+- 关键 UI 行为:切换输入实时刷新、规则启停影响结果、ResultCard 正确展示增量明细。
+- 公告收件箱:粘贴保存为 `pending`、转规则后标 `applied`、顶部计数随 `pending` 变化。
 
 ## 11. 参考来源(官方)
 
