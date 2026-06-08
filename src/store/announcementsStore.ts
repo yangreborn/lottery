@@ -13,11 +13,13 @@ export function loadAnnouncements(): Announcement[] {
   }
 }
 
-export function saveAnnouncements(list: Announcement[]): void {
+// 返回是否成功写入;false 表示 localStorage 不可用,数据只存内存
+export function saveAnnouncements(list: Announcement[]): boolean {
   try {
     localStorage.setItem(ANN_KEY, JSON.stringify(list))
+    return true
   } catch {
-    /* 降级:不持久化 */
+    return false
   }
 }
 

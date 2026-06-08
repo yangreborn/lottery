@@ -21,9 +21,10 @@ export default function App() {
   const [multiplier, setMultiplier] = useState(1)
   const [rules, setRules] = useState<Rule[]>(() => loadRules())
   const [anns, setAnns] = useState<Announcement[]>(() => loadAnnouncements())
+  const [storageOk, setStorageOk] = useState(true)
 
-  useEffect(() => { saveRules(rules) }, [rules])
-  useEffect(() => { saveAnnouncements(anns) }, [anns])
+  useEffect(() => { if (!saveRules(rules)) setStorageOk(false) }, [rules])
+  useEffect(() => { if (!saveAnnouncements(anns)) setStorageOk(false) }, [anns])
 
   function changeGame(id: GameId) {
     setGameId(id)
@@ -41,6 +42,11 @@ export default function App() {
 
   return (
     <div className="max-w-md mx-auto min-h-screen bg-white flex flex-col">
+      {!storageOk && (
+        <div className="bg-red-50 text-red-700 text-sm px-4 py-2 text-center">
+          存储不可用,本次的规则与公告不会被保存
+        </div>
+      )}
       <div className="flex-1 p-5">
         {tab === 'calc' && (
           <div className="space-y-4">

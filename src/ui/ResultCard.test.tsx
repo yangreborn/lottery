@@ -29,6 +29,11 @@ describe('ResultCard', () => {
     expect(screen.getByText(/\+¥10,400/)).toBeInTheDocument()
   })
 
+  it('应税档位即使没有规则也显示税后金额', () => {
+    render(<ResultCard result={{ ...withRule, applied: [] }} />)
+    expect(screen.getByText(/税后 ¥16,640/)).toBeInTheDocument()
+  })
+
   it('免税档显示 免税/免实名', () => {
     render(<ResultCard result={{ ...withRule, amount: 1500, applied: [], tax: 0, netAmount: 1500, needTax: false, needRealname: false }} />)
     expect(screen.getByText('免税')).toBeInTheDocument()

@@ -30,6 +30,7 @@ export function ResultCard({ result: r }: { result: TierResult }) {
         </div>
         <div className="text-right">
           <div className="text-2xl font-extrabold">{formatYuan(r.amount!)}</div>
+          {r.needTax && <div className="text-xs text-gray-400 mt-0.5">税后 {formatYuan(r.netAmount!)}</div>}
           <div className="flex gap-1.5 justify-end mt-1.5">
             <Tag on={r.needTax} onText="缴税" offText="免税" />
             <Tag on={r.needRealname} onText="实名" offText="免实名" />
@@ -45,7 +46,7 @@ export function ResultCard({ result: r }: { result: TierResult }) {
             </div>
           ))}
           <div>= 最终 <span className="text-indigo-500 font-semibold">{formatYuan(r.amount!)}</span></div>
-          {r.needTax && <div className="text-gray-400">税后到手 {formatYuan(r.netAmount!)}(税 {formatYuan(r.tax)})</div>}
+          {r.needTax && <div className="text-gray-400">应缴税 {formatYuan(r.tax)}</div>}
         </div>
       )}
     </div>

@@ -17,11 +17,13 @@ export function loadRules(): Rule[] {
   }
 }
 
-export function saveRules(rules: Rule[]): void {
+// 返回是否成功写入;false 表示 localStorage 不可用(如隐私模式),数据只存内存
+export function saveRules(rules: Rule[]): boolean {
   try {
     localStorage.setItem(RULES_KEY, JSON.stringify(rules))
+    return true
   } catch {
-    /* localStorage 不可用时降级为不持久化 */
+    return false
   }
 }
 
