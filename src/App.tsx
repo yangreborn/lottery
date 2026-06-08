@@ -78,7 +78,7 @@ export default function App() {
             )}
           </div>
         )}
-        {tab === 'split' && <SplitPage />}
+        {tab === 'split' && <SplitPage rules={rules} />}
         {tab === 'rules' && <RulesPage rules={rules} onChange={setRules} />}
         {tab === 'inbox' && <InboxPage announcements={anns} onChange={setAnns} />}
       </div>
