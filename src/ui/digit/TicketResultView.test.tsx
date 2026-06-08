@@ -8,7 +8,7 @@ const result: TicketResult = {
     { playId: 'zhixuan', label: '直选', base: 1040, multiplier: 10, applied: [], amount: 10400, needTax: true, needRealname: true },
     { playId: 'zu6', label: '组选六', base: 173, multiplier: 10, applied: [], amount: 1730, needTax: false, needRealname: false },
   ],
-  total: 12130, tax: 2426, netAmount: 9704, needTax: true, needRealname: true,
+  total: 12130, tax: 2426, netAmount: 9704, needTax: true, needRealname: true, exclusiveNote: false,
 }
 
 describe('TicketResultView', () => {
@@ -21,7 +21,7 @@ describe('TicketResultView', () => {
   })
 
   it('空票提示设置倍数', () => {
-    render(<TicketResultView result={{ contributions: [], total: 0, tax: 0, netAmount: 0, needTax: false, needRealname: false }} />)
+    render(<TicketResultView result={{ contributions: [], total: 0, tax: 0, netAmount: 0, needTax: false, needRealname: false, exclusiveNote: false }} />)
     expect(screen.getByText(/请至少给一种玩法设置倍数/)).toBeInTheDocument()
   })
 })

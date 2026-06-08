@@ -3,8 +3,8 @@ import type { Game, GameId, Play } from './types'
 // 福彩3D 与 体彩排列3 奖金相同
 const digitPlays: Play[] = [
   { id: 'zhixuan', label: '直选', betUnit: 2, tiers: [{ id: 'hit', label: '直选命中', prize: 1040 }] },
-  { id: 'zu3', label: '组选三', betUnit: 2, tiers: [{ id: 'hit', label: '组选三命中', prize: 346 }] },
-  { id: 'zu6', label: '组选六', betUnit: 2, tiers: [{ id: 'hit', label: '组选六命中', prize: 173 }] },
+  { id: 'zu3', label: '组选三', betUnit: 2, exclusiveGroup: 'zu', tiers: [{ id: 'hit', label: '组选三命中', prize: 346 }] },
+  { id: 'zu6', label: '组选六', betUnit: 2, exclusiveGroup: 'zu', tiers: [{ id: 'hit', label: '组选六命中', prize: 173 }] },
 ]
 
 const kl8Plays: Play[] = [

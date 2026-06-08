@@ -62,10 +62,21 @@ export function computeDigitTicket(
     }
   })
 
-  const total = round2(contributions.reduce((s, c) => s + c.amount, 0))
+  // 合计:互斥组(如组三/组六不同时中奖)只计该组较高者,其余相加
+  const naiveSum = contributions.reduce((s, c) => s + c.amount, 0)
+  const groupMax = new Map<string, number>()
+  let summed = 0
+  for (const c of contributions) {
+    const group = getPlay(gameId, c.playId).exclusiveGroup
+    if (group) groupMax.set(group, Math.max(groupMax.get(group) ?? 0, c.amount))
+    else summed += c.amount
+  }
+  for (const v of groupMax.values()) summed += v
+  const total = round2(summed)
   const tax = round2(computeTax(total))
   return {
     contributions, total, tax, netAmount: round2(total - tax),
     needTax: needTax(total), needRealname: needRealname(total),
+    exclusiveNote: round2(naiveSum) > total,
   }
 }

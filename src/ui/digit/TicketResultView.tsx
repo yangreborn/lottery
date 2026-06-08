@@ -61,6 +61,9 @@ export function TicketResultView({ result: r }: { result: TicketResult }) {
               <span>{c.label}</span><span className="font-semibold">{formatYuan(c.amount)}</span>
             </div>
           ))}
+          {r.exclusiveNote && (
+            <div className="text-amber-700 mt-1">注:组三/组六 不会同时中奖,合计按较高者计入。</div>
+          )}
           {r.needTax && <div className="text-gray-400 mt-1">应缴税 {formatYuan(r.tax)}(税率20%)</div>}
         </div>
       </div>

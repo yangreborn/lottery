@@ -22,6 +22,19 @@ describe('computeDigitTicket 组合投注', () => {
     expect(t.contributions).toHaveLength(1)
     expect(t.total).toBe(1040)
   })
+  it('组三+组六互斥:合计=直选+max(组三,组六),不全额相加', () => {
+    const t = computeDigitTicket('pl3', [
+      { playId: 'zhixuan', multiplier: 10 }, { playId: 'zu3', multiplier: 10 }, { playId: 'zu6', multiplier: 10 },
+    ], [], NOW)
+    // 直选10400 + max(组三3460, 组六1730) = 13860(而非 15590)
+    expect(t.total).toBe(13860)
+    expect(t.exclusiveNote).toBe(true)
+  })
+  it('只买组三+组六 → 合计取较高者', () => {
+    const t = computeDigitTicket('pl3', [{ playId: 'zu3', multiplier: 10 }, { playId: 'zu6', multiplier: 10 }], [], NOW)
+    expect(t.total).toBe(3460)
+    expect(t.exclusiveNote).toBe(true)
+  })
   it('内置加奖规则:直选满20元加至1500/注', () => {
     const rule: Rule = {
       id: 'r', name: '加奖', enabled: true, games: ['pl3'], plays: ['zhixuan'],

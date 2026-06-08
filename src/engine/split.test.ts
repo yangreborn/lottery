@@ -48,6 +48,12 @@ describe('splitCombination 组合', () => {
     expect(p.totalWin).toBe(12130)
     expect(p.tickets[0].items.length).toBeGreaterThan(1) // 一张票上含多种玩法
   })
+  it('mixed:组三10+组六10 同票按较高者(3460)算,1张', () => {
+    const p = splitCombination('pl3', [bet('zu3', 10), bet('zu6', 10)], [], 99, 'mixed', 0)
+    expect(p.tickets).toHaveLength(1)            // 互斥,合计仅3460,一张装下
+    expect(p.tickets[0].win).toBe(3460)
+    expect(p.realnameCount).toBe(1)
+  })
 })
 
 describe('splitCombination 规则感知(直选满20元加至1500)', () => {

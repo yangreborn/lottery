@@ -11,6 +11,7 @@ export interface Play {
   label: string         // 如 '选七' / '直选'
   betUnit: number       // 单注基础投注额(元)
   tiers: Tier[]
+  exclusiveGroup?: string // 同组的玩法不会同时中奖(如组三/组六);合计时同组只计较高者
 }
 
 export interface Game {
@@ -104,9 +105,10 @@ export interface PlayContribution {
 
 export interface TicketResult {
   contributions: PlayContribution[]  // 已买(倍数>0)的玩法
-  total: number                      // 合计中奖额
+  total: number                      // 合计中奖额(互斥组只计较高者)
   tax: number
   netAmount: number
   needTax: boolean                   // 按 total 判定
   needRealname: boolean
+  exclusiveNote: boolean             // 是否因互斥(如组三/组六)而未全额相加
 }
