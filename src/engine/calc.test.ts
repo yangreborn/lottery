@@ -1,8 +1,47 @@
 import { describe, it, expect } from 'vitest'
-import { computeTiers } from './calc'
+import { computeTiers, computeDigitTicket, isDigitGame } from './calc'
 import type { Rule } from '../data/types'
 
 const NOW = Date.parse('2026-10-03')
+
+describe('computeDigitTicket 组合投注', () => {
+  it('isDigitGame', () => {
+    expect(isDigitGame('fc3d')).toBe(true)
+    expect(isDigitGame('pl3')).toBe(true)
+    expect(isDigitGame('kl8')).toBe(false)
+  })
+  it('直选10倍+组六10倍 同时命中 → 合计 12130 缴税+实名', () => {
+    const t = computeDigitTicket('pl3', [{ playId: 'zhixuan', multiplier: 10 }, { playId: 'zu6', multiplier: 10 }], [], NOW)
+    expect(t.total).toBe(12130) // 1040*10 + 173*10
+    expect(t.needTax).toBe(true)
+    expect(t.needRealname).toBe(true)
+    expect(t.contributions).toHaveLength(2)
+  })
+  it('倍数0的玩法不计入', () => {
+    const t = computeDigitTicket('pl3', [{ playId: 'zhixuan', multiplier: 1 }, { playId: 'zu3', multiplier: 0 }], [], NOW)
+    expect(t.contributions).toHaveLength(1)
+    expect(t.total).toBe(1040)
+  })
+  it('内置加奖规则:直选满20元加至1500/注', () => {
+    const rule: Rule = {
+      id: 'r', name: '加奖', enabled: true, games: ['pl3'], plays: ['zhixuan'],
+      condition: { kind: 'betAmountGte', value: 20 }, effect: { kind: 'setPerBetPrize', value: 1500 },
+    }
+    const t = computeDigitTicket('pl3', [{ playId: 'zhixuan', multiplier: 10 }], [rule], NOW)
+    expect(t.contributions[0].amount).toBe(15000) // 1500 * 10
+    expect(t.contributions[0].applied[0].ruleId).toBe('r')
+  })
+  it('投注未达门槛规则不触发', () => {
+    const rule: Rule = {
+      id: 'r', name: '加奖', enabled: true, games: ['pl3'], plays: ['zhixuan'],
+      condition: { kind: 'betAmountGte', value: 20 }, effect: { kind: 'setPerBetPrize', value: 1500 },
+    }
+    // 只买直选 1 倍 = 投注 2 元 < 20
+    const t = computeDigitTicket('pl3', [{ playId: 'zhixuan', multiplier: 1 }], [rule], NOW)
+    expect(t.contributions[0].amount).toBe(1040)
+    expect(t.contributions[0].applied).toEqual([])
+  })
+})
 
 describe('computeTiers 无规则', () => {
   it('3D 直选 10倍 = 10400 → 缴税+实名,税后8320', () => {

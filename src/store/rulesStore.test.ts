@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { loadRules, saveRules, validateRuleDraft, genId } from './rulesStore'
+import { loadRules, saveRules, validateRuleDraft, genId, hasStoredRules } from './rulesStore'
 import type { Rule } from '../data/types'
 
 beforeEach(() => localStorage.clear())
@@ -22,6 +22,14 @@ describe('genId', () => {
   it('生成不同 id', () => expect(genId()).not.toBe(genId()))
 })
 
+describe('hasStoredRules', () => {
+  it('未写过为 false,写过为 true', () => {
+    expect(hasStoredRules()).toBe(false)
+    saveRules([])
+    expect(hasStoredRules()).toBe(true)
+  })
+})
+
 describe('validateRuleDraft', () => {
   it('合法无错误', () => expect(validateRuleDraft(sample)).toEqual([]))
   it('名称为空报错', () => expect(validateRuleDraft({ ...sample, name: ' ' })).toContain('请填写规则名称'))
@@ -31,4 +39,6 @@ describe('validateRuleDraft', () => {
     expect(validateRuleDraft({ ...sample, effect: { kind: 'addPercent', percent: -5 } })).toContain('百分比不能为负'))
   it('betAmountGte 为负报错', () =>
     expect(validateRuleDraft({ ...sample, condition: { kind: 'betAmountGte', value: -1 } })).toContain('金额阈值不能为负'))
+  it('setPerBetPrize<=0 报错', () =>
+    expect(validateRuleDraft({ ...sample, effect: { kind: 'setPerBetPrize', value: 0 } })).toContain('每注金额必须大于0'))
 })

@@ -1,14 +1,22 @@
 import { describe, it, expect } from 'vitest'
-import { applyEffect, conditionMatches, gameApplies, isWithinValidity, applyActiveRules } from './rules'
+import { applyEffect, conditionMatches, gameApplies, playApplies, isWithinValidity, applyActiveRules } from './rules'
 import type { CalcContext, Rule } from '../data/types'
 
-const ctx: CalcContext = { gameId: 'fc3d', playId: 'zhixuan', tierId: 'hit', betAmount: 20, tierAmount: 10400 }
+const ctx: CalcContext = { gameId: 'fc3d', playId: 'zhixuan', tierId: 'hit', betAmount: 20, tierAmount: 10400, multiplier: 10 }
 
 describe('applyEffect', () => {
   it('翻倍', () => expect(applyEffect(100, { kind: 'multiply', factor: 2 })).toBe(200))
   it('加50%', () => expect(applyEffect(100, { kind: 'addPercent', percent: 50 })).toBe(150))
   it('加固定', () => expect(applyEffect(100, { kind: 'addFixed', value: 30 })).toBe(130))
   it('封顶', () => expect(applyEffect(100, { kind: 'cap', value: 80 })).toBe(80))
+  it('设为每注X元按倍数', () => expect(applyEffect(0, { kind: 'setPerBetPrize', value: 1500 }, 5)).toBe(7500))
+})
+
+describe('playApplies', () => {
+  const base: Rule = { id: 'r', name: 'x', enabled: true, games: 'all', condition: { kind: 'always' }, effect: { kind: 'multiply', factor: 2 } }
+  it('无 plays 不限', () => expect(playApplies(base, 'zhixuan')).toBe(true))
+  it('plays 命中', () => expect(playApplies({ ...base, plays: ['zhixuan'] }, 'zhixuan')).toBe(true))
+  it('plays 不中', () => expect(playApplies({ ...base, plays: ['zu3'] }, 'zhixuan')).toBe(false))
 })
 
 describe('conditionMatches', () => {

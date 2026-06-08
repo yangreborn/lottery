@@ -2,12 +2,13 @@ import type { AppliedRule, CalcContext, GameId, Rule, RuleCondition, RuleEffect 
 
 const round2 = (n: number): number => Math.round(n * 100) / 100
 
-export function applyEffect(amount: number, e: RuleEffect): number {
+export function applyEffect(amount: number, e: RuleEffect, multiplier = 1): number {
   switch (e.kind) {
     case 'multiply': return amount * e.factor
     case 'addPercent': return amount * (1 + e.percent / 100)
     case 'addFixed': return amount + e.value
     case 'cap': return Math.min(amount, e.value)
+    case 'setPerBetPrize': return e.value * multiplier
   }
 }
 
@@ -23,6 +24,10 @@ export function conditionMatches(c: RuleCondition, ctx: CalcContext): boolean {
 
 export function gameApplies(rule: Rule, gameId: GameId): boolean {
   return rule.games === 'all' || rule.games.includes(gameId)
+}
+
+export function playApplies(rule: Rule, playId: string): boolean {
+  return !rule.plays || rule.plays.length === 0 || rule.plays.includes(playId)
 }
 
 export function isWithinValidity(rule: Rule, nowMs: number): boolean {
@@ -43,8 +48,9 @@ export function applyActiveRules(
     if (!rule.enabled) continue
     if (!isWithinValidity(rule, nowMs)) continue
     if (!gameApplies(rule, ctx.gameId)) continue
+    if (!playApplies(rule, ctx.playId)) continue
     if (!conditionMatches(rule.condition, ctx)) continue
-    const next = round2(applyEffect(running, rule.effect))
+    const next = round2(applyEffect(running, rule.effect, ctx.multiplier))
     const delta = round2(next - running)
     applied.push({ ruleId: rule.id, ruleName: rule.name, delta })
     running = next

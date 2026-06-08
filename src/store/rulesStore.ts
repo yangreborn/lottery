@@ -6,6 +6,15 @@ export function genId(): string {
   return crypto.randomUUID()
 }
 
+// 是否写过规则(用于首次启动判断是否需要播种内置规则)
+export function hasStoredRules(): boolean {
+  try {
+    return localStorage.getItem(RULES_KEY) !== null
+  } catch {
+    return false
+  }
+}
+
 export function loadRules(): Rule[] {
   try {
     const raw = localStorage.getItem(RULES_KEY)
@@ -36,6 +45,7 @@ export function validateRuleDraft(rule: Rule): string[] {
   if (e.kind === 'addPercent' && e.percent < 0) errors.push('百分比不能为负')
   if (e.kind === 'addFixed' && e.value < 0) errors.push('加奖金额不能为负')
   if (e.kind === 'cap' && e.value < 0) errors.push('封顶金额不能为负')
+  if (e.kind === 'setPerBetPrize' && e.value <= 0) errors.push('每注金额必须大于0')
 
   const c = rule.condition
   if (c.kind === 'betAmountGte' && c.value < 0) errors.push('金额阈值不能为负')

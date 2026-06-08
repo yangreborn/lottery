@@ -30,12 +30,14 @@ export type RuleEffect =
   | { kind: 'addPercent'; percent: number }
   | { kind: 'addFixed'; value: number }
   | { kind: 'cap'; value: number }
+  | { kind: 'setPerBetPrize'; value: number }  // 把每注奖金设为 value(总额 = value × 倍数)
 
 export interface Rule {
   id: string
   name: string
   enabled: boolean
   games: GameId[] | 'all'
+  plays?: string[]       // 可选:仅适用的玩法 id(与 games、condition 取与);为空=不限玩法
   condition: RuleCondition
   effect: RuleEffect
   validFrom?: string    // ISO 日期,可选
@@ -60,8 +62,9 @@ export interface CalcContext {
   gameId: GameId
   playId: string
   tierId: string
-  betAmount: number   // 单票投注金额 = betUnit × 倍数
+  betAmount: number   // 单票投注金额(组合投注时为整票合计)
   tierAmount: number  // base × 倍数(用于 tierAmountRange)
+  multiplier: number  // 该注倍数(用于 setPerBetPrize)
 }
 
 export interface CalcInput {
@@ -83,4 +86,27 @@ export interface TierResult {
   needTax: boolean
   needRealname: boolean
   floating: boolean
+}
+
+// 数字彩(3D/排列3)组合投注
+export interface DigitBet { playId: string; multiplier: number }
+
+export interface PlayContribution {
+  playId: string
+  label: string
+  base: number
+  multiplier: number
+  applied: AppliedRule[]
+  amount: number          // 该玩法中奖额(含规则)
+  needTax: boolean        // 该玩法单独是否过税线
+  needRealname: boolean
+}
+
+export interface TicketResult {
+  contributions: PlayContribution[]  // 已买(倍数>0)的玩法
+  total: number                      // 合计中奖额
+  tax: number
+  netAmount: number
+  needTax: boolean                   // 按 total 判定
+  needRealname: boolean
 }
