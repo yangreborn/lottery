@@ -38,6 +38,13 @@ describe('MultiplierStepper', () => {
     expect(input.value).toBe('25')
   })
 
+  it('min=0 时可减到0(组合投注用)', async () => {
+    const onChange = vi.fn()
+    render(<MultiplierStepper value={1} min={0} onChange={onChange} />)
+    await userEvent.click(screen.getByRole('button', { name: '减少倍数' }))
+    expect(onChange).toHaveBeenCalledWith(0)
+  })
+
   it('清空后失焦回落为 1', async () => {
     function Harness() {
       const [v, setV] = useState(5)
