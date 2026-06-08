@@ -37,6 +37,12 @@ describe('App', () => {
     expect(screen.getByText('同时命中 · 合计')).toBeInTheDocument()
   })
 
+  it('切到拆票页显示省税拆票', async () => {
+    render(<App />)
+    await userEvent.click(screen.getByRole('button', { name: '拆票' }))
+    expect(screen.getByText('省税拆票')).toBeInTheDocument()
+  })
+
   it('刷新后已启用的规则保持(持久化)', async () => {
     const first = render(<App />)
     await userEvent.click(screen.getByRole('button', { name: '规则' }))

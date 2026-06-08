@@ -13,8 +13,9 @@ import { PendingBanner } from './ui/PendingBanner'
 import { DigitTicketBuilder } from './ui/digit/DigitTicketBuilder'
 import { RulesPage } from './ui/rules/RulesPage'
 import { InboxPage } from './ui/inbox/InboxPage'
+import { SplitPage } from './ui/split/SplitPage'
 
-type Tab = 'calc' | 'rules' | 'inbox'
+type Tab = 'calc' | 'split' | 'rules' | 'inbox'
 
 // 数字彩默认组合:直选=1,其余=0
 const initialDigitBets = (): DigitBet[] =>
@@ -77,11 +78,13 @@ export default function App() {
             )}
           </div>
         )}
+        {tab === 'split' && <SplitPage />}
         {tab === 'rules' && <RulesPage rules={rules} onChange={setRules} />}
         {tab === 'inbox' && <InboxPage announcements={anns} onChange={setAnns} />}
       </div>
       <nav className="flex border-t border-gray-200 text-sm sticky bottom-0 bg-white">
         {tabBtn('calc', '速查')}
+        {tabBtn('split', '拆票')}
         {tabBtn('rules', '规则')}
         {tabBtn('inbox', pending > 0 ? `公告 ●` : '公告')}
       </nav>
