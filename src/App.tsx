@@ -1,16 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { Announcement, DigitBet, GameId, Rule } from './data/types'
+import type { Announcement, DigitBet, GameId, Kl8Entry, Rule } from './data/types'
 import { getGame } from './data/games'
 import { BUILTIN_RULES } from './data/builtinRules'
-import { computeTiers, computeDigitTicket, isDigitGame } from './engine/calc'
+import { computeDigitTicket, computeKl8Ticket, isDigitGame } from './engine/calc'
 import { loadRules, saveRules, hasStoredRules } from './store/rulesStore'
 import { loadAnnouncements, saveAnnouncements, pendingCount } from './store/announcementsStore'
 import { GameSelector } from './ui/GameSelector'
-import { PlaySelector } from './ui/PlaySelector'
-import { MultiplierStepper } from './ui/MultiplierStepper'
-import { ResultList } from './ui/ResultList'
 import { PendingBanner } from './ui/PendingBanner'
 import { DigitTicketBuilder } from './ui/digit/DigitTicketBuilder'
+import { Kl8TicketBuilder } from './ui/kl8/Kl8TicketBuilder'
 import { RulesPage } from './ui/rules/RulesPage'
 import { InboxPage } from './ui/inbox/InboxPage'
 import { SplitPage } from './ui/split/SplitPage'
@@ -24,9 +22,8 @@ const initialDigitBets = (): DigitBet[] =>
 export default function App() {
   const [tab, setTab] = useState<Tab>('calc')
   const [gameId, setGameId] = useState<GameId>('kl8')
-  const [playId, setPlayId] = useState<string>(getGame('kl8').plays[0].id)
-  const [multiplier, setMultiplier] = useState(1)
   const [digitBets, setDigitBets] = useState<DigitBet[]>(initialDigitBets)
+  const [kl8Entries, setKl8Entries] = useState<Kl8Entry[]>(() => [{ playId: 'kl8-7', multiplier: 1 }])
   // 首次启动播种内置规则;之后读已存的
   const [rules, setRules] = useState<Rule[]>(() => (hasStoredRules() ? loadRules() : BUILTIN_RULES))
   const [anns, setAnns] = useState<Announcement[]>(() => loadAnnouncements())
@@ -37,17 +34,16 @@ export default function App() {
 
   function changeGame(id: GameId) {
     setGameId(id)
-    setPlayId(getGame(id).plays[0].id)
   }
 
   const digit = isDigitGame(gameId)
-  const tierResults = useMemo(
-    () => computeTiers({ gameId, playId, multiplier }, rules),
-    [gameId, playId, multiplier, rules],
-  )
   const ticketResult = useMemo(
     () => (digit ? computeDigitTicket(gameId, digitBets, rules) : null),
     [digit, gameId, digitBets, rules],
+  )
+  const kl8Result = useMemo(
+    () => computeKl8Ticket(kl8Entries, rules),
+    [kl8Entries, rules],
   )
   const pending = pendingCount(anns)
 
@@ -69,12 +65,7 @@ export default function App() {
             {digit ? (
               <DigitTicketBuilder gameId={gameId} bets={digitBets} onChange={setDigitBets} result={ticketResult!} />
             ) : (
-              <>
-                <PlaySelector gameId={gameId} value={playId} onChange={setPlayId} />
-                <MultiplierStepper value={multiplier} onChange={setMultiplier} />
-                <div className="border-t border-dashed border-gray-200 my-2" />
-                <ResultList results={tierResults} />
-              </>
+              <Kl8TicketBuilder entries={kl8Entries} onChange={setKl8Entries} result={kl8Result} />
             )}
           </div>
         )}

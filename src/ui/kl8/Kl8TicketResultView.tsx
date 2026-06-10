@@ -47,7 +47,7 @@ export function Kl8TicketResultView({ result: r }: { result: Kl8TicketResult }) 
               <div key={l.tierId} className={`flex justify-between items-center text-sm ${e.lockedTierId === l.tierId ? 'font-bold text-indigo-600' : 'text-gray-600'}`}>
                 <span>{l.tierLabel}{e.lockedTierId === l.tierId ? '(已锁定)' : ''}</span>
                 <span className="flex items-center gap-1.5">
-                  <span>{l.floating ? '浮动' : formatYuan(l.amount)}</span>
+                  <span>{l.floating ? '浮动' : formatYuan(l.amount ?? 0)}</span>
                   {!l.floating && <Tag on={l.needTax} onText="税" offText="免" />}
                   {!l.floating && <Tag on={l.needRealname} onText="名" offText="免" />}
                 </span>

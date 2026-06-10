@@ -6,17 +6,15 @@ import App from './App'
 beforeEach(() => localStorage.clear())
 
 describe('App', () => {
-  it('默认显示速查页与档位结果', () => {
+  it('默认显示速查页与快乐8多注结论', () => {
     render(<App />)
-    expect(screen.getByText('所有中奖档位')).toBeInTheDocument()
+    expect(screen.getByText('本票最高可中')).toBeInTheDocument()
   })
 
-  it('增加倍数后结果实时刷新', async () => {
+  it('默认选七1倍:最高可中8500、存在实名', () => {
     render(<App />)
-    // 默认快乐8·选一·1倍:中1个 = 4.5(金额也出现在副标题,故用 getAllByText)
-    expect(screen.getAllByText('¥4.5').length).toBeGreaterThan(0)
-    await userEvent.click(screen.getByRole('button', { name: '增加倍数' })) // 2倍 → 9
-    expect(screen.getByText('¥9')).toBeInTheDocument()
+    expect(screen.getAllByText('¥8,500').length).toBeGreaterThan(0)
+    expect(screen.getByText(/存在需要实名的中奖情况/)).toBeInTheDocument()
   })
 
   it('切到公告页粘贴后,速查页顶部出现未应用提示', async () => {
