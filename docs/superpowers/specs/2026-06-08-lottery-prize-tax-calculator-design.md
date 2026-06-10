@@ -331,3 +331,8 @@ src/
 - 号码推导纯函数:`derivePlayFromDigits(digits)`(→ 可选玩法集合)、`derivePlayFromKl8(numbers)`(→ 选N)。
 - 组件:快乐8 新增 `Kl8TicketBuilder` + 结论卡;数字彩 `DigitTicketBuilder` 增"输 3 位数字"折叠区驱动玩法可选性。
 - TDD:多注顶档求和过阈值、浮动标记、`lockedTierId` 精确求和、`derivePlayFromDigits`(全同/一对/全不同)、`derivePlayFromKl8`(个数→选N、越界校验)、UI 冒烟。
+
+### 14.4 按真实彩票结构输入(2026-06-10 修订,已确认)
+把速查页输入改为"贴合一张真实彩票":
+- **数字彩(3D/排列3)**:一张票 = **最多 5 注**,每注 = 一组 3 位号码(可选)+ 玩法(直选/组三/组六)+ 倍数;号码决定该注可选玩法。**取消同号"组三/组六互斥取较高"**——每注是独立一注(独立 2 元),各注奖金相加;同一组号"直选+组选"用两注表达。整票号码合计判税/实名。引擎新增 `computeDigitMultiTicket`(类型 `DigitTicketBet`/`DigitTicketResult`),拆票引擎沿用旧 `computeDigitTicket`+`DigitBet` 不动。
+- **快乐8**:一张票 = **单一玩法(选N),全票锁定**;多注、各注号码不同、可中不同档。`Kl8Ticket { playId; bets: Kl8Bet[] }`,`Kl8Bet { numbers?; multiplier; lockedTierId? }`;`computeKl8Ticket(ticket, rules)` 顶部仍给"最高可中 + 是否存在缴税/实名"结论,锁定档位求精确合计。玩法由首注号码个数自动判定或下拉选定。
