@@ -147,7 +147,7 @@ describe('computeDigitMultiTicket', () => {
 
 describe('computeKl8Ticket', () => {
   it('单注选七1倍:最高可中8500 → 存在实名、不存在缴税', () => {
-    const r = computeKl8Ticket({ playId: 'kl8-7', bets: [{ multiplier: 1 }] }, [])
+    const r = computeKl8Ticket({ playId: 'kl8-7', multiplier: 1, bets: [{}] }, [])
     expect(r.maxTotal).toBe(8500)
     expect(r.existsRealname).toBe(true)
     expect(r.existsTax).toBe(false)
@@ -155,16 +155,21 @@ describe('computeKl8Ticket', () => {
     expect(r.playLabel).toBe('选七')
   })
 
-  it('选七两注顶档求和17000 → 存在缴税', () => {
-    const r = computeKl8Ticket(
-      { playId: 'kl8-7', bets: [{ multiplier: 1 }, { multiplier: 1 }] }, [])
+  it('选七两注(整票1倍)顶档求和17000 → 存在缴税', () => {
+    const r = computeKl8Ticket({ playId: 'kl8-7', multiplier: 1, bets: [{}, {}] }, [])
     expect(r.maxTotal).toBe(17000)
     expect(r.existsTax).toBe(true)
     expect(r.existsRealname).toBe(true)
   })
 
+  it('倍数全票一致:选七单注2倍 = 17000 → 存在缴税', () => {
+    const r = computeKl8Ticket({ playId: 'kl8-7', multiplier: 2, bets: [{}] }, [])
+    expect(r.maxTotal).toBe(17000)
+    expect(r.existsTax).toBe(true)
+  })
+
   it('选十含浮动头奖 → maxFloating,必然缴税+实名', () => {
-    const r = computeKl8Ticket({ playId: 'kl8-10', bets: [{ multiplier: 1 }] }, [])
+    const r = computeKl8Ticket({ playId: 'kl8-10', multiplier: 1, bets: [{}] }, [])
     expect(r.maxFloating).toBe(true)
     expect(r.existsTax).toBe(true)
     expect(r.existsRealname).toBe(true)
@@ -173,21 +178,12 @@ describe('computeKl8Ticket', () => {
   it('锁定档位:选八票,一注锁中八(50000)、一注锁中七(800)=50800 精确合计', () => {
     const r = computeKl8Ticket({
       playId: 'kl8-8',
-      bets: [
-        { multiplier: 1, lockedTierId: 'hit8' },
-        { multiplier: 1, lockedTierId: 'hit7' },
-      ],
+      multiplier: 1,
+      bets: [{ lockedTierId: 'hit8' }, { lockedTierId: 'hit7' }],
     }, [])
     expect(r.hasLocked).toBe(true)
     expect(r.lockedTotal).toBe(50800)
     expect(r.lockedNeedTax).toBe(true)
     expect(r.lockedTax).toBe(10160)   // 50800 × 20%
-  })
-
-  it('倍数>0 才计入', () => {
-    const r = computeKl8Ticket(
-      { playId: 'kl8-7', bets: [{ multiplier: 0 }, { multiplier: 1 }] }, [])
-    expect(r.bets).toHaveLength(1)
-    expect(r.maxTotal).toBe(8500)
   })
 })

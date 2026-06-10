@@ -10,6 +10,22 @@ export function derivePlayFromKl8(numbers: number[]): string | null {
   return `kl8-${numbers.length}`
 }
 
+// 快乐8 号码:连续数字按每 2 位切分(个位补0)。'030780' → [3, 7, 80]。末尾单个数字(未配对)忽略。
+export function parseKl8Pairs(raw: string): number[] {
+  const digits = raw.replace(/\D/g, '')
+  const out: number[] = []
+  for (let i = 0; i + 1 < digits.length; i += 2) out.push(Number(digits.slice(i, i + 2)))
+  return out
+}
+
+// 把连续数字格式化成空格分隔的两位组(供输入框显示自动换位)。'030780' → '03 07 80'。
+export function formatKl8Pairs(raw: string): string {
+  const digits = raw.replace(/\D/g, '')
+  const out: string[] = []
+  for (let i = 0; i < digits.length; i += 2) out.push(digits.slice(i, i + 2))
+  return out.join(' ')
+}
+
 export interface DigitApplicability {
   zhixuan: boolean
   zu3: boolean

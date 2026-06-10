@@ -37,7 +37,7 @@ export function Kl8TicketResultView({ result: r }: { result: Kl8TicketResult }) 
 
       {/* 该玩法各档参考表(1倍基准) */}
       <div className="border border-gray-200 rounded-2xl px-4 py-3 mb-3">
-        <div className="text-sm text-gray-400 mb-1.5">{r.playLabel} 各档奖金(单注 1 倍)</div>
+        <div className="text-sm text-gray-400 mb-1.5">{r.playLabel} 各档奖金(单注 {r.multiplier} 倍)</div>
         <div className="space-y-1">
           {r.tierTable.map(l => (
             <div key={l.tierId} className="flex justify-between items-center text-sm text-gray-600">

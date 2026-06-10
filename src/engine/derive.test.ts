@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { validateKl8Numbers, derivePlayFromKl8, derivePlayFromDigits } from './derive'
+import { validateKl8Numbers, derivePlayFromKl8, derivePlayFromDigits, parseKl8Pairs, formatKl8Pairs } from './derive'
 
 describe('validateKl8Numbers', () => {
   it('个数 1–10、1–80、不重复 通过', () => {
@@ -22,6 +22,22 @@ describe('derivePlayFromKl8', () => {
   })
   it('非法输入 → null', () => {
     expect(derivePlayFromKl8([5, 5])).toBeNull()
+  })
+})
+
+describe('parseKl8Pairs / formatKl8Pairs', () => {
+  it('每两位一个号,个位补0', () => {
+    expect(parseKl8Pairs('030780')).toEqual([3, 7, 80])
+  })
+  it('末尾未配对的单个数字忽略', () => {
+    expect(parseKl8Pairs('03078')).toEqual([3, 7])
+  })
+  it('非数字字符被剔除', () => {
+    expect(parseKl8Pairs('03 07 80')).toEqual([3, 7, 80])
+  })
+  it('格式化为空格分隔两位组(含正在输入的单个)', () => {
+    expect(formatKl8Pairs('030780')).toBe('03 07 80')
+    expect(formatKl8Pairs('03078')).toBe('03 07 8')
   })
 })
 

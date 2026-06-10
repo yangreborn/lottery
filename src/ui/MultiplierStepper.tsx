@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 
-interface Props { value: number; onChange: (n: number) => void; min?: number; label?: string }
+interface Props { value: number; onChange: (n: number) => void; min?: number; max?: number; label?: string }
 
-export function MultiplierStepper({ value, onChange, min = 1, label = '倍数' }: Props) {
-  const clamp = (n: number) => Math.max(min, Math.min(99, Math.floor(n)))
+export function MultiplierStepper({ value, onChange, min = 1, max = 99, label = '倍数' }: Props) {
+  const clamp = (n: number) => Math.max(min, Math.min(max, Math.floor(n)))
   // 用本地文本态承载输入,允许临时清空,避免"删不掉最前面的1"
   const [text, setText] = useState(String(value))
   useEffect(() => { setText(String(value)) }, [value])

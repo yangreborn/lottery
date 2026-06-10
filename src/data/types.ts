@@ -141,21 +141,20 @@ export interface DigitTicketResult {
   needRealname: boolean
 }
 
-// —— 快乐8 一张票:单一玩法(选N),多注(§14.4)——
+// —— 快乐8 一张票:单一玩法(选N),倍数全票一致,多注(§14.4 / §14.5)——
 export interface Kl8Bet {
   numbers?: number[]      // 可选:该注真实号码(1-80)
-  multiplier: number
   lockedTierId?: string   // 锁定"中几个"场景;缺省=仅参与可能性分析
 }
 
 export interface Kl8Ticket {
   playId: string          // 选N,全票共享
+  multiplier: number      // 倍数,全票一致
   bets: Kl8Bet[]
 }
 
 export interface Kl8BetResult {
   numbers?: number[]
-  multiplier: number
   topAmount: number | null
   topFloating: boolean
   lockedTierId?: string
@@ -165,7 +164,8 @@ export interface Kl8BetResult {
 export interface Kl8TicketResult {
   playId: string
   playLabel: string
-  tierTable: TierResult[]        // 该玩法各档(1倍基准,参考表)
+  multiplier: number
+  tierTable: TierResult[]        // 该玩法各档(按整票倍数,参考表)
   bets: Kl8BetResult[]
   maxTotal: number               // Σ 各注顶档金额(浮动注不计入数值,另以 maxFloating 标记)
   maxFloating: boolean           // 是否含浮动头奖

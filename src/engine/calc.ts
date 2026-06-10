@@ -119,15 +119,14 @@ export function computeKl8Ticket(
   ticket: Kl8Ticket, rules: Rule[], nowMs: number = Date.now(),
 ): Kl8TicketResult {
   const play = getPlay('kl8', ticket.playId)
-  const tierTable = computeTiers({ gameId: 'kl8', playId: ticket.playId, multiplier: 1 }, rules, nowMs)
-  const active = ticket.bets.filter(b => b.multiplier > 0)
+  // 倍数全票一致 → 各注档位表相同,算一次复用
+  const tierTable = computeTiers({ gameId: 'kl8', playId: ticket.playId, multiplier: ticket.multiplier }, rules, nowMs)
+  const top = tierTable[0]   // 数据中各档位按顶档在前排列
 
-  const betResults: Kl8BetResult[] = active.map((b): Kl8BetResult => {
-    const lines = computeTiers({ gameId: 'kl8', playId: ticket.playId, multiplier: b.multiplier }, rules, nowMs)
-    const top = lines[0]   // 数据中各档位按顶档在前排列
-    const lockedLine = b.lockedTierId ? lines.find(l => l.tierId === b.lockedTierId) : undefined
+  const betResults: Kl8BetResult[] = ticket.bets.map((b): Kl8BetResult => {
+    const lockedLine = b.lockedTierId ? tierTable.find(l => l.tierId === b.lockedTierId) : undefined
     return {
-      numbers: b.numbers, multiplier: b.multiplier,
+      numbers: b.numbers,
       topAmount: top ? top.amount : null, topFloating: top ? top.floating : false,
       lockedTierId: b.lockedTierId, lockedLine,
     }
@@ -144,7 +143,7 @@ export function computeKl8Ticket(
   const lockedTotal = round2(lockedBets.reduce((s, r) => s + (r.lockedLine!.amount ?? 0), 0))
   const lockedTax = round2(computeTax(lockedTotal))
   return {
-    playId: ticket.playId, playLabel: play.label, tierTable, bets: betResults,
+    playId: ticket.playId, playLabel: play.label, multiplier: ticket.multiplier, tierTable, bets: betResults,
     maxTotal, maxFloating, existsTax, existsRealname,
     hasLocked, lockedTotal, lockedFloating,
     lockedTax, lockedNetAmount: round2(lockedTotal - lockedTax),

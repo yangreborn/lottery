@@ -13,6 +13,8 @@ interface Props {
 }
 
 const MAX_BETS = 5
+// 福彩(3D)倍数上限 15;体彩(排列3)沿用默认
+const maxMultOf = (gameId: GameId) => (gameId === 'fc3d' ? 15 : 99)
 type PlayId = 'zhixuan' | 'zu3' | 'zu6'
 const ALL_PLAYS: PlayId[] = ['zhixuan', 'zu3', 'zu6']
 
@@ -100,7 +102,7 @@ export function DigitTicketBuilder({ gameId, bets, onChange, result }: Props) {
               </div>
 
               <div className="mt-2">
-                <MultiplierStepper value={b.multiplier} min={0} onChange={m => update(i, { multiplier: m })} />
+                <MultiplierStepper value={b.multiplier} min={0} max={maxMultOf(gameId)} onChange={m => update(i, { multiplier: m })} />
               </div>
             </div>
           )

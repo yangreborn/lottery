@@ -21,7 +21,7 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('calc')
   const [gameId, setGameId] = useState<GameId>('kl8')
   const [digitBets, setDigitBets] = useState<DigitTicketBet[]>(initialDigitBets)
-  const [kl8Ticket, setKl8Ticket] = useState<Kl8Ticket>(() => ({ playId: 'kl8-7', bets: [{ multiplier: 1 }] }))
+  const [kl8Ticket, setKl8Ticket] = useState<Kl8Ticket>(() => ({ playId: 'kl8-7', multiplier: 1, bets: [{}] }))
   // 首次启动播种内置规则;之后读已存的
   const [rules, setRules] = useState<Rule[]>(() => (hasStoredRules() ? loadRules() : BUILTIN_RULES))
   const [anns, setAnns] = useState<Announcement[]>(() => loadAnnouncements())
