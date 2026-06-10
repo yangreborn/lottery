@@ -42,4 +42,19 @@ describe('Kl8TicketBuilder', () => {
       bets: [{ numbers: [3, 7, 11], lockedTierId: undefined }],
     })
   })
+
+  it('一票只能一种选N:已有7个号,另一注输3个号被拒绝', async () => {
+    const { onChange } = setup({ playId: 'kl8-7', multiplier: 1, bets: [{ numbers: [1, 2, 3, 4, 5, 6, 7] }, {}] })
+    await userEvent.click(screen.getAllByRole('button', { name: '✎ 输入号码' })[1]) // 第2注
+    await userEvent.type(screen.getByLabelText('第2注号码输入'), '030711')          // 仅3个号
+    await userEvent.click(screen.getByRole('button', { name: '确定' }))
+    expect(screen.getByText(/本票为选七/)).toBeInTheDocument()
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('改玩法下拉 清空已输号码', async () => {
+    const { onChange } = setup({ playId: 'kl8-7', multiplier: 1, bets: [{ numbers: [1, 2, 3, 4, 5, 6, 7] }] })
+    await userEvent.selectOptions(screen.getByLabelText('快乐8玩法'), 'kl8-3')
+    expect(onChange).toHaveBeenCalledWith({ playId: 'kl8-3', multiplier: 1, bets: [{}] })
+  })
 })

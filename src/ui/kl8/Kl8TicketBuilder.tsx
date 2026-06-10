@@ -17,11 +17,14 @@ const KL8_MAX_MULT = 15   // 福彩倍数上限
 export function Kl8TicketBuilder({ ticket, onChange, result }: Props) {
   const [numOpen, setNumOpen] = useState<number | null>(null)
   const [numRaw, setNumRaw] = useState('')   // 正在输入的连续数字(每2位一个号)
+  const [numError, setNumError] = useState('')
 
   const play = getPlay('kl8', ticket.playId)
+  const currentN = Number(ticket.playId.split('-')[1])
 
   function setPlay(playId: string) {
-    onChange({ ...ticket, playId, bets: ticket.bets.map(b => ({ ...b, lockedTierId: undefined })) })
+    // 改玩法 → 清空各注号码与锁定(旧玩法的号码/档位不再适用)
+    onChange({ ...ticket, playId, bets: ticket.bets.map(() => ({})) })
   }
   function setMultiplier(multiplier: number) {
     onChange({ ...ticket, multiplier })
@@ -37,7 +40,15 @@ export function Kl8TicketBuilder({ ticket, onChange, result }: Props) {
   }
   function applyNumbers(i: number) {
     const nums = parseKl8Pairs(numRaw)
-    if (numRaw.replace(/\D/g, '').length % 2 !== 0 || !validateKl8Numbers(nums).ok) return
+    if (numRaw.replace(/\D/g, '').length % 2 !== 0) { setNumError('每个号需 2 位(个位补 0)'); return }
+    const v = validateKl8Numbers(nums)
+    if (!v.ok) { setNumError(v.error ?? '号码不合法'); return }
+    // 一张票只能一种选N:若已有别的注输了号,本注个数必须一致
+    const otherNumbered = ticket.bets.some((b, j) => j !== i && b.numbers && b.numbers.length > 0)
+    if (otherNumbered && nums.length !== currentN) {
+      setNumError(`本票为${play.label},每注须 ${currentN} 个号码`)
+      return
+    }
     const derivedPlay = derivePlayFromKl8(nums)!
     // 号码个数决定玩法:整票锁定为该玩法,并清各注锁定档
     onChange({
@@ -48,6 +59,7 @@ export function Kl8TicketBuilder({ ticket, onChange, result }: Props) {
     })
     setNumOpen(null)
     setNumRaw('')
+    setNumError('')
   }
 
   return (
@@ -95,7 +107,7 @@ export function Kl8TicketBuilder({ ticket, onChange, result }: Props) {
                   {play.tiers.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
                 </select>
               </label>
-              <button className="text-indigo-500" onClick={() => { setNumOpen(numOpen === i ? null : i); setNumRaw('') }}>
+              <button className="text-indigo-500" onClick={() => { setNumOpen(numOpen === i ? null : i); setNumRaw(''); setNumError('') }}>
                 ✎ 输入号码
               </button>
             </div>
@@ -118,6 +130,7 @@ export function Kl8TicketBuilder({ ticket, onChange, result }: Props) {
                   <button className="text-indigo-500 font-semibold text-sm" onClick={() => applyNumbers(i)}>确定</button>
                 </div>
                 <div className="text-xs text-amber-700 mt-1">每个号 2 位(如 3 输 03)、1–80、不重复;号码个数决定整票玩法。</div>
+                {numError && <div className="text-xs text-red-600 mt-1">{numError}</div>}
               </div>
             )}
           </div>
