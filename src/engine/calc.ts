@@ -1,5 +1,6 @@
 import type {
-  CalcContext, CalcInput, DigitBet, GameId, Kl8Entry, Kl8EntryResult, Kl8TicketResult,
+  CalcContext, CalcInput, DigitBet, DigitContribution, DigitTicketBet, DigitTicketResult,
+  GameId, Kl8BetResult, Kl8Ticket, Kl8TicketResult,
   PlayContribution, Rule, TicketResult, TierResult,
 } from '../data/types'
 import { getPlay } from '../data/games'
@@ -82,35 +83,69 @@ export function computeDigitTicket(
   }
 }
 
-// 快乐8:多注组合票 + 可能性分析(§14)。复用 computeTiers 逐注取各档。
-export function computeKl8Ticket(
-  entries: Kl8Entry[], rules: Rule[], nowMs: number = Date.now(),
-): Kl8TicketResult {
-  const active = entries.filter(e => e.multiplier > 0)
-  const entryResults: Kl8EntryResult[] = active.map((e): Kl8EntryResult => {
-    const play = getPlay('kl8', e.playId)
-    const lines = computeTiers({ gameId: 'kl8', playId: e.playId, multiplier: e.multiplier }, rules, nowMs)
-    const top = lines[0]   // 数据中各玩法档位按顶档在前排列
-    const lockedLine = e.lockedTierId ? lines.find(l => l.tierId === e.lockedTierId) : undefined
+// 数字彩(3D/排列3)一张票:最多 5 注,各注独立相加(§14.4)。
+export function computeDigitMultiTicket(
+  gameId: GameId, bets: DigitTicketBet[], rules: Rule[], nowMs: number = Date.now(),
+): DigitTicketResult {
+  const bought = bets.filter(b => b.multiplier > 0)
+  const ticketBet = bought.reduce((s, b) => s + getPlay(gameId, b.playId).betUnit * b.multiplier, 0)
+
+  const contributions: DigitContribution[] = bought.map((b): DigitContribution => {
+    const play = getPlay(gameId, b.playId)
+    const tier = play.tiers[0]            // 数字彩每玩法单档
+    const base = tier.prize ?? 0
+    const afterMult = round2(base * b.multiplier)
+    const ctx: CalcContext = {
+      gameId, playId: b.playId, tierId: tier.id,
+      betAmount: ticketBet, tierAmount: afterMult, multiplier: b.multiplier,
+    }
+    const { amount, applied } = applyActiveRules(afterMult, ctx, rules, nowMs)
     return {
-      playId: e.playId, label: play.label, multiplier: e.multiplier, lines,
-      topAmount: top ? top.amount : null, topFloating: top ? top.floating : false,
-      lockedTierId: e.lockedTierId, lockedLine,
+      playId: b.playId, label: play.label, digits: b.digits, base, multiplier: b.multiplier,
+      applied, amount, needTax: needTax(amount), needRealname: needRealname(amount),
     }
   })
 
-  const maxFloating = entryResults.some(r => r.topFloating)
-  const maxTotal = round2(entryResults.reduce((s, r) => s + (r.topAmount ?? 0), 0))
+  const total = round2(contributions.reduce((s, c) => s + c.amount, 0))
+  const tax = round2(computeTax(total))
+  return {
+    contributions, total, tax, netAmount: round2(total - tax),
+    needTax: needTax(total), needRealname: needRealname(total),
+  }
+}
+
+// 快乐8 一张票:单一玩法(选N),多注;可能性分析 + 锁定场景(§14.4)。
+export function computeKl8Ticket(
+  ticket: Kl8Ticket, rules: Rule[], nowMs: number = Date.now(),
+): Kl8TicketResult {
+  const play = getPlay('kl8', ticket.playId)
+  const tierTable = computeTiers({ gameId: 'kl8', playId: ticket.playId, multiplier: 1 }, rules, nowMs)
+  const active = ticket.bets.filter(b => b.multiplier > 0)
+
+  const betResults: Kl8BetResult[] = active.map((b): Kl8BetResult => {
+    const lines = computeTiers({ gameId: 'kl8', playId: ticket.playId, multiplier: b.multiplier }, rules, nowMs)
+    const top = lines[0]   // 数据中各档位按顶档在前排列
+    const lockedLine = b.lockedTierId ? lines.find(l => l.tierId === b.lockedTierId) : undefined
+    return {
+      numbers: b.numbers, multiplier: b.multiplier,
+      topAmount: top ? top.amount : null, topFloating: top ? top.floating : false,
+      lockedTierId: b.lockedTierId, lockedLine,
+    }
+  })
+
+  const maxFloating = betResults.some(r => r.topFloating)
+  const maxTotal = round2(betResults.reduce((s, r) => s + (r.topAmount ?? 0), 0))
   const existsTax = maxFloating || needTax(maxTotal)
   const existsRealname = maxFloating || needRealname(maxTotal)
 
-  const lockedEntries = entryResults.filter(r => r.lockedLine)
-  const hasLocked = lockedEntries.length > 0
-  const lockedFloating = lockedEntries.some(r => r.lockedLine!.floating)
-  const lockedTotal = round2(lockedEntries.reduce((s, r) => s + (r.lockedLine!.amount ?? 0), 0))
+  const lockedBets = betResults.filter(r => r.lockedLine)
+  const hasLocked = lockedBets.length > 0
+  const lockedFloating = lockedBets.some(r => r.lockedLine!.floating)
+  const lockedTotal = round2(lockedBets.reduce((s, r) => s + (r.lockedLine!.amount ?? 0), 0))
   const lockedTax = round2(computeTax(lockedTotal))
   return {
-    entries: entryResults, maxTotal, maxFloating, existsTax, existsRealname,
+    playId: ticket.playId, playLabel: play.label, tierTable, bets: betResults,
+    maxTotal, maxFloating, existsTax, existsRealname,
     hasLocked, lockedTotal, lockedFloating,
     lockedTax, lockedNetAmount: round2(lockedTotal - lockedTax),
     lockedNeedTax: lockedFloating || needTax(lockedTotal),

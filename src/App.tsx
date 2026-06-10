@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { Announcement, DigitBet, GameId, Kl8Entry, Rule } from './data/types'
-import { getGame } from './data/games'
+import type { Announcement, DigitTicketBet, GameId, Kl8Ticket, Rule } from './data/types'
 import { BUILTIN_RULES } from './data/builtinRules'
-import { computeDigitTicket, computeKl8Ticket, isDigitGame } from './engine/calc'
+import { computeDigitMultiTicket, computeKl8Ticket, isDigitGame } from './engine/calc'
 import { loadRules, saveRules, hasStoredRules } from './store/rulesStore'
 import { loadAnnouncements, saveAnnouncements, pendingCount } from './store/announcementsStore'
 import { GameSelector } from './ui/GameSelector'
@@ -15,15 +14,14 @@ import { SplitPage } from './ui/split/SplitPage'
 
 type Tab = 'calc' | 'split' | 'rules' | 'inbox'
 
-// 数字彩默认组合:直选=1,其余=0
-const initialDigitBets = (): DigitBet[] =>
-  getGame('fc3d').plays.map((p, i) => ({ playId: p.id, multiplier: i === 0 ? 1 : 0 }))
+// 数字彩默认:一张票一注直选
+const initialDigitBets = (): DigitTicketBet[] => [{ playId: 'zhixuan', multiplier: 1 }]
 
 export default function App() {
   const [tab, setTab] = useState<Tab>('calc')
   const [gameId, setGameId] = useState<GameId>('kl8')
-  const [digitBets, setDigitBets] = useState<DigitBet[]>(initialDigitBets)
-  const [kl8Entries, setKl8Entries] = useState<Kl8Entry[]>(() => [{ playId: 'kl8-7', multiplier: 1 }])
+  const [digitBets, setDigitBets] = useState<DigitTicketBet[]>(initialDigitBets)
+  const [kl8Ticket, setKl8Ticket] = useState<Kl8Ticket>(() => ({ playId: 'kl8-7', bets: [{ multiplier: 1 }] }))
   // 首次启动播种内置规则;之后读已存的
   const [rules, setRules] = useState<Rule[]>(() => (hasStoredRules() ? loadRules() : BUILTIN_RULES))
   const [anns, setAnns] = useState<Announcement[]>(() => loadAnnouncements())
@@ -38,12 +36,12 @@ export default function App() {
 
   const digit = isDigitGame(gameId)
   const ticketResult = useMemo(
-    () => (digit ? computeDigitTicket(gameId, digitBets, rules) : null),
+    () => (digit ? computeDigitMultiTicket(gameId, digitBets, rules) : null),
     [digit, gameId, digitBets, rules],
   )
   const kl8Result = useMemo(
-    () => computeKl8Ticket(kl8Entries, rules),
-    [kl8Entries, rules],
+    () => computeKl8Ticket(kl8Ticket, rules),
+    [kl8Ticket, rules],
   )
   const pending = pendingCount(anns)
 
@@ -65,7 +63,7 @@ export default function App() {
             {digit ? (
               <DigitTicketBuilder gameId={gameId} bets={digitBets} onChange={setDigitBets} result={ticketResult!} />
             ) : (
-              <Kl8TicketBuilder entries={kl8Entries} onChange={setKl8Entries} result={kl8Result} />
+              <Kl8TicketBuilder ticket={kl8Ticket} onChange={setKl8Ticket} result={kl8Result} />
             )}
           </div>
         )}

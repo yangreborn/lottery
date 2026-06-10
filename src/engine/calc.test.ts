@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computeTiers, computeDigitTicket, computeKl8Ticket, isDigitGame } from './calc'
+import { computeTiers, computeDigitTicket, computeDigitMultiTicket, computeKl8Ticket, isDigitGame } from './calc'
 import type { Rule } from '../data/types'
 
 const NOW = Date.parse('2026-10-03')
@@ -113,45 +113,81 @@ describe('computeTiers 带规则(满18元翻倍)', () => {
   })
 })
 
+describe('computeDigitMultiTicket', () => {
+  it('两注相加:直选(1040)+组六(173)=1213,整票合计判定', () => {
+    const r = computeDigitMultiTicket('fc3d', [
+      { digits: [1, 2, 3], playId: 'zhixuan', multiplier: 1 },
+      { digits: [1, 2, 3], playId: 'zu6', multiplier: 1 },
+    ], [])
+    expect(r.total).toBe(1213)
+    expect(r.needRealname).toBe(false)
+    expect(r.needTax).toBe(false)
+    expect(r.contributions).toHaveLength(2)
+  })
+
+  it('整票合计过3千 → 需实名', () => {
+    // 直选 1040 × 3倍 = 3120 > 3000
+    const r = computeDigitMultiTicket('fc3d', [
+      { playId: 'zhixuan', multiplier: 3 },
+    ], [])
+    expect(r.total).toBe(3120)
+    expect(r.needRealname).toBe(true)
+    expect(r.needTax).toBe(false)
+  })
+
+  it('倍数>0 才计入', () => {
+    const r = computeDigitMultiTicket('fc3d', [
+      { playId: 'zhixuan', multiplier: 0 },
+      { playId: 'zu3', multiplier: 1 },
+    ], [])
+    expect(r.contributions).toHaveLength(1)
+    expect(r.total).toBe(346)
+  })
+})
+
 describe('computeKl8Ticket', () => {
   it('单注选七1倍:最高可中8500 → 存在实名、不存在缴税', () => {
-    const r = computeKl8Ticket([{ playId: 'kl8-7', multiplier: 1 }], [])
+    const r = computeKl8Ticket({ playId: 'kl8-7', bets: [{ multiplier: 1 }] }, [])
     expect(r.maxTotal).toBe(8500)
     expect(r.existsRealname).toBe(true)
     expect(r.existsTax).toBe(false)
     expect(r.maxFloating).toBe(false)
+    expect(r.playLabel).toBe('选七')
   })
 
-  it('两注顶档求和过万 → 存在缴税', () => {
+  it('选七两注顶档求和17000 → 存在缴税', () => {
     const r = computeKl8Ticket(
-      [{ playId: 'kl8-7', multiplier: 1 }, { playId: 'kl8-6', multiplier: 1 }], [])
-    expect(r.maxTotal).toBe(11380)
+      { playId: 'kl8-7', bets: [{ multiplier: 1 }, { multiplier: 1 }] }, [])
+    expect(r.maxTotal).toBe(17000)
     expect(r.existsTax).toBe(true)
     expect(r.existsRealname).toBe(true)
   })
 
   it('选十含浮动头奖 → maxFloating,必然缴税+实名', () => {
-    const r = computeKl8Ticket([{ playId: 'kl8-10', multiplier: 1 }], [])
+    const r = computeKl8Ticket({ playId: 'kl8-10', bets: [{ multiplier: 1 }] }, [])
     expect(r.maxFloating).toBe(true)
     expect(r.existsTax).toBe(true)
     expect(r.existsRealname).toBe(true)
   })
 
-  it('锁定档位:一注锁中六(2880)、一注锁中七(8500)=11380 精确合计', () => {
-    const r = computeKl8Ticket([
-      { playId: 'kl8-7', multiplier: 1, lockedTierId: 'hit7' },
-      { playId: 'kl8-6', multiplier: 1, lockedTierId: 'hit6' },
-    ], [])
+  it('锁定档位:选八票,一注锁中八(50000)、一注锁中七(800)=50800 精确合计', () => {
+    const r = computeKl8Ticket({
+      playId: 'kl8-8',
+      bets: [
+        { multiplier: 1, lockedTierId: 'hit8' },
+        { multiplier: 1, lockedTierId: 'hit7' },
+      ],
+    }, [])
     expect(r.hasLocked).toBe(true)
-    expect(r.lockedTotal).toBe(11380)
+    expect(r.lockedTotal).toBe(50800)
     expect(r.lockedNeedTax).toBe(true)
-    expect(r.lockedTax).toBe(2276)
+    expect(r.lockedTax).toBe(10160)   // 50800 × 20%
   })
 
   it('倍数>0 才计入', () => {
     const r = computeKl8Ticket(
-      [{ playId: 'kl8-7', multiplier: 0 }, { playId: 'kl8-1', multiplier: 1 }], [])
-    expect(r.entries).toHaveLength(1)
-    expect(r.maxTotal).toBe(4.5)
+      { playId: 'kl8-7', bets: [{ multiplier: 0 }, { multiplier: 1 }] }, [])
+    expect(r.bets).toHaveLength(1)
+    expect(r.maxTotal).toBe(8500)
   })
 })

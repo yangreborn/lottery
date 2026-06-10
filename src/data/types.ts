@@ -113,27 +113,60 @@ export interface TicketResult {
   exclusiveNote: boolean             // 是否因互斥(如组三/组六)而未全额相加
 }
 
-// —— 快乐8 多注票(§14)——
-export interface Kl8Entry {
-  playId: string
+// —— 数字彩(3D/排列3)一张票:最多 5 注,每注一组号码 + 玩法(§14.4)——
+export interface DigitTicketBet {
+  digits?: number[]      // 3 位号码,可选
+  playId: string         // zhixuan / zu3 / zu6
   multiplier: number
-  lockedTierId?: string   // 锁定"中几个"场景;缺省=不锁,仅参与可能性分析
-  numbers?: number[]      // 可选:输入的真实号码(1-80)
 }
 
-export interface Kl8EntryResult {
+export interface DigitContribution {
   playId: string
   label: string
+  digits?: number[]
+  base: number
   multiplier: number
-  lines: TierResult[]            // 该注各档位(复用 computeTiers)
-  topAmount: number | null       // 顶档金额(null = 浮动头奖)
+  applied: AppliedRule[]
+  amount: number
+  needTax: boolean
+  needRealname: boolean
+}
+
+export interface DigitTicketResult {
+  contributions: DigitContribution[]  // 各注(倍数>0)
+  total: number                       // 整票合计(各注相加)
+  tax: number
+  netAmount: number
+  needTax: boolean
+  needRealname: boolean
+}
+
+// —— 快乐8 一张票:单一玩法(选N),多注(§14.4)——
+export interface Kl8Bet {
+  numbers?: number[]      // 可选:该注真实号码(1-80)
+  multiplier: number
+  lockedTierId?: string   // 锁定"中几个"场景;缺省=仅参与可能性分析
+}
+
+export interface Kl8Ticket {
+  playId: string          // 选N,全票共享
+  bets: Kl8Bet[]
+}
+
+export interface Kl8BetResult {
+  numbers?: number[]
+  multiplier: number
+  topAmount: number | null
   topFloating: boolean
   lockedTierId?: string
-  lockedLine?: TierResult        // 锁定档位的结果(未锁则 undefined)
+  lockedLine?: TierResult
 }
 
 export interface Kl8TicketResult {
-  entries: Kl8EntryResult[]
+  playId: string
+  playLabel: string
+  tierTable: TierResult[]        // 该玩法各档(1倍基准,参考表)
+  bets: Kl8BetResult[]
   maxTotal: number               // Σ 各注顶档金额(浮动注不计入数值,另以 maxFloating 标记)
   maxFloating: boolean           // 是否含浮动头奖
   existsTax: boolean             // 是否存在需缴税(>1万)的中奖可能

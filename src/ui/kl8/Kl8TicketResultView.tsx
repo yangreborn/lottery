@@ -10,7 +10,7 @@ function Tag({ on, onText, offText }: { on: boolean; onText: string; offText: st
 }
 
 export function Kl8TicketResultView({ result: r }: { result: Kl8TicketResult }) {
-  if (r.entries.length === 0) {
+  if (r.bets.length === 0) {
     return <div className="text-gray-400 text-center py-8">请至少添加一注并设置倍数</div>
   }
 
@@ -35,31 +35,26 @@ export function Kl8TicketResultView({ result: r }: { result: Kl8TicketResult }) 
         </div>
       </div>
 
-      {/* 逐注明细 */}
-      <div className="text-sm text-gray-400 mb-2">逐注各档可能金额</div>
-      {r.entries.map((e, i) => (
-        <div key={i} className="border border-gray-200 rounded-2xl px-4 py-3 mb-2.5">
-          <div className="flex justify-between items-center mb-1.5">
-            <div className="text-base font-bold">{e.label} · {e.multiplier}倍</div>
-          </div>
-          <div className="space-y-1">
-            {e.lines.map(l => (
-              <div key={l.tierId} className={`flex justify-between items-center text-sm ${e.lockedTierId === l.tierId ? 'font-bold text-indigo-600' : 'text-gray-600'}`}>
-                <span>{l.tierLabel}{e.lockedTierId === l.tierId ? '(已锁定)' : ''}</span>
-                <span className="flex items-center gap-1.5">
-                  <span>{l.floating ? '浮动' : formatYuan(l.amount ?? 0)}</span>
-                  {!l.floating && <Tag on={l.needTax} onText="税" offText="免" />}
-                  {!l.floating && <Tag on={l.needRealname} onText="名" offText="免" />}
-                </span>
-              </div>
-            ))}
-          </div>
+      {/* 该玩法各档参考表(1倍基准) */}
+      <div className="border border-gray-200 rounded-2xl px-4 py-3 mb-3">
+        <div className="text-sm text-gray-400 mb-1.5">{r.playLabel} 各档奖金(单注 1 倍)</div>
+        <div className="space-y-1">
+          {r.tierTable.map(l => (
+            <div key={l.tierId} className="flex justify-between items-center text-sm text-gray-600">
+              <span>{l.tierLabel}</span>
+              <span className="flex items-center gap-1.5">
+                <span>{l.floating ? '浮动' : formatYuan(l.amount ?? 0)}</span>
+                {!l.floating && <Tag on={l.needTax} onText="税" offText="免" />}
+                {!l.floating && <Tag on={l.needRealname} onText="名" offText="免" />}
+              </span>
+            </div>
+          ))}
         </div>
-      ))}
+      </div>
 
       {/* 锁定场景合计 */}
       {r.hasLocked && (
-        <div className="border-2 border-indigo-300 bg-indigo-50 rounded-2xl px-5 py-4 mt-3">
+        <div className="border-2 border-indigo-300 bg-indigo-50 rounded-2xl px-5 py-4">
           <div className="flex justify-between items-start">
             <div className="text-lg font-bold text-indigo-700">锁定场景 · 合计</div>
             <div className="text-right">

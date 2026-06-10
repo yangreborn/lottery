@@ -28,11 +28,11 @@ describe('App', () => {
     expect(screen.getByText(/有 1 条公告未应用为规则/)).toBeInTheDocument()
   })
 
-  it('切到排列3显示组合投注与合计', async () => {
+  it('切到排列3显示多注票与整票合计', async () => {
     render(<App />)
     await userEvent.click(screen.getByRole('button', { name: '排列3' }))
-    expect(screen.getByText(/组合投注/)).toBeInTheDocument()
-    expect(screen.getByText('同时命中 · 合计')).toBeInTheDocument()
+    expect(screen.getByText(/一张票\(最多 5 注/)).toBeInTheDocument()
+    expect(screen.getByText('整票合计')).toBeInTheDocument()
   })
 
   it('切到拆票页显示省税拆票', async () => {
