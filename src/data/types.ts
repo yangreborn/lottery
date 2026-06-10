@@ -112,3 +112,38 @@ export interface TicketResult {
   needRealname: boolean
   exclusiveNote: boolean             // 是否因互斥(如组三/组六)而未全额相加
 }
+
+// —— 快乐8 多注票(§14)——
+export interface Kl8Entry {
+  playId: string
+  multiplier: number
+  lockedTierId?: string   // 锁定"中几个"场景;缺省=不锁,仅参与可能性分析
+  numbers?: number[]      // 可选:输入的真实号码(1-80)
+}
+
+export interface Kl8EntryResult {
+  playId: string
+  label: string
+  multiplier: number
+  lines: TierResult[]            // 该注各档位(复用 computeTiers)
+  topAmount: number | null       // 顶档金额(null = 浮动头奖)
+  topFloating: boolean
+  lockedTierId?: string
+  lockedLine?: TierResult        // 锁定档位的结果(未锁则 undefined)
+}
+
+export interface Kl8TicketResult {
+  entries: Kl8EntryResult[]
+  maxTotal: number               // Σ 各注顶档金额(浮动注不计入数值,另以 maxFloating 标记)
+  maxFloating: boolean           // 是否含浮动头奖
+  existsTax: boolean             // 是否存在需缴税(>1万)的中奖可能
+  existsRealname: boolean        // 是否存在需实名(>3千)的中奖可能
+  // 锁定场景(至少一注 lockedTierId 时有效)
+  hasLocked: boolean
+  lockedTotal: number
+  lockedFloating: boolean
+  lockedTax: number
+  lockedNetAmount: number
+  lockedNeedTax: boolean
+  lockedNeedRealname: boolean
+}

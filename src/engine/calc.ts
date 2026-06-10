@@ -1,5 +1,6 @@
 import type {
-  CalcContext, CalcInput, DigitBet, GameId, PlayContribution, Rule, TicketResult, TierResult,
+  CalcContext, CalcInput, DigitBet, GameId, Kl8Entry, Kl8EntryResult, Kl8TicketResult,
+  PlayContribution, Rule, TicketResult, TierResult,
 } from '../data/types'
 import { getPlay } from '../data/games'
 import { computeTax, needRealname, needTax } from '../data/tax'
@@ -78,5 +79,41 @@ export function computeDigitTicket(
     contributions, total, tax, netAmount: round2(total - tax),
     needTax: needTax(total), needRealname: needRealname(total),
     exclusiveNote: round2(naiveSum) > total,
+  }
+}
+
+// 快乐8:多注组合票 + 可能性分析(§14)。复用 computeTiers 逐注取各档。
+export function computeKl8Ticket(
+  entries: Kl8Entry[], rules: Rule[], nowMs: number = Date.now(),
+): Kl8TicketResult {
+  const active = entries.filter(e => e.multiplier > 0)
+  const entryResults: Kl8EntryResult[] = active.map((e): Kl8EntryResult => {
+    const play = getPlay('kl8', e.playId)
+    const lines = computeTiers({ gameId: 'kl8', playId: e.playId, multiplier: e.multiplier }, rules, nowMs)
+    const top = lines[0]   // 数据中各玩法档位按顶档在前排列
+    const lockedLine = e.lockedTierId ? lines.find(l => l.tierId === e.lockedTierId) : undefined
+    return {
+      playId: e.playId, label: play.label, multiplier: e.multiplier, lines,
+      topAmount: top ? top.amount : null, topFloating: top ? top.floating : false,
+      lockedTierId: e.lockedTierId, lockedLine,
+    }
+  })
+
+  const maxFloating = entryResults.some(r => r.topFloating)
+  const maxTotal = round2(entryResults.reduce((s, r) => s + (r.topAmount ?? 0), 0))
+  const existsTax = maxFloating || needTax(maxTotal)
+  const existsRealname = maxFloating || needRealname(maxTotal)
+
+  const lockedEntries = entryResults.filter(r => r.lockedLine)
+  const hasLocked = lockedEntries.length > 0
+  const lockedFloating = lockedEntries.some(r => r.lockedLine!.floating)
+  const lockedTotal = round2(lockedEntries.reduce((s, r) => s + (r.lockedLine!.amount ?? 0), 0))
+  const lockedTax = round2(computeTax(lockedTotal))
+  return {
+    entries: entryResults, maxTotal, maxFloating, existsTax, existsRealname,
+    hasLocked, lockedTotal, lockedFloating,
+    lockedTax, lockedNetAmount: round2(lockedTotal - lockedTax),
+    lockedNeedTax: lockedFloating || needTax(lockedTotal),
+    lockedNeedRealname: lockedFloating || needRealname(lockedTotal),
   }
 }
